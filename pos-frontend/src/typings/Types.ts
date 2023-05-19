@@ -4,14 +4,17 @@ export interface BaseType {
 }
 
 export default interface MenusData extends BaseType {
+    asset_url: string;
     price: number;
+    description: string;
+    branchIds?: string[];
+    isAvailable: boolean;
 }
 export interface MenuCategory extends BaseType {}
 
 export interface Addon extends BaseType {
     price: number;
     addonCategoriesId: number | null | undefined;
-    isAvailable: boolean;
 }
 export interface menuMenuCategory {
     menu_cat_id: any;
@@ -23,13 +26,28 @@ export interface AddonCategory extends BaseType {
     isRequired: boolean;
 }
 
-export interface Locations extends BaseType {
-    open_time: number;
-    close_time: number;
+export interface BranchesData {
+    id?: number;
+    township_id?: number | undefined;
+    address: string;
+    companyId?: number;
+    townshipId?: string;
 }
 
-export interface LocationMenu {
+export interface branchesMenus {
+    menu_id: number | undefined;
+    branch_id: number;
     id?: number;
-    menuId: number;
-    locationId: number;
+    isAvailable: boolean;
 }
+
+export interface Company {
+    id?: any;
+    name: string;
+}
+
+export interface User {
+    id?: number;
+    email: string;
+}
+export interface Townships extends BaseType {}

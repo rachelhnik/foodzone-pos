@@ -1,106 +1,164 @@
-import { Box, Button, Checkbox, TextField } from "@mui/material";
+import {
+    Box,
+    Button,
+    Card,
+    CardContent,
+    CardMedia,
+    Typography,
+} from "@mui/material";
 import Layout from "./Layout";
-import { useContext, useState } from "react";
-import MenusData, { LocationMenu } from "../typings/Types";
+import { useContext, useEffect, useState } from "react";
+import MenusData from "../typings/Types";
 import { AppContext, AppContextType } from "../contexts/AppContext";
-import Chip from "@mui/material/Chip";
-import Stack from "@mui/material/Stack";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import AddIcon from "@mui/icons-material/Add";
 import { config } from "../config/Config";
-import { Link, useParams } from "react-router-dom";
-import SingleMenu from "./MenuDetail";
 
 const Menus = () => {
-    const [menu, setMenu] = useState<MenusData>({ name: "", price: 0 });
-    const [avalilable, setAvailable] = useState(false);
-    const { fetchData, menus, locations, locationMenus } =
+    const [clickText, setClickText] = useState({
+        text: "SOLD OUT",
+    });
+    const [active, setActive] = useState(false);
+
+    const navigate = useNavigate();
+    const branchId = localStorage.getItem("selectedLocation");
+    const accessToken = localStorage.getItem("accessToken");
+
+    const { fetchData, menus, branches, branchesMenus } =
         useContext(AppContext);
-    const { locationId } = useParams();
-    let locationMenusList: any = [];
-    if (locationId) {
-        locationMenus
-            .filter((data) => data.location_id === parseInt(locationId, 10))
-            .filter((item) => {
-                menus.filter((menu) => {
-                    if (menu.id === item.menu_id) locationMenusList.push(menu);
-                });
-            });
-    }
 
-    const handlePostMenu = async () => {
-        if (menu.name.length === 0 || !menu.price) return;
+    const validBranchesMenus = branchesMenus
+        .filter((branchMenu) => String(branchMenu.branch_id) === branchId)
+        .map((branchMenu) => branchMenu.menu_id);
+    console.log(validBranchesMenus);
 
-        const response = await fetch(`${config.apiBaseUrl}/menus`, {
-            method: "POST",
-            mode: "cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ menus: menu, locationId: locationId }),
-        });
+    const filteredMenus = menus.filter((menu) =>
+        validBranchesMenus.includes(menu.id as number)
+    );
+    console.log(filteredMenus);
+    let text: any;
 
-        console.log("hello");
-        fetchData();
+    const handleSale = async (evt: any, menuId: number | undefined) => {
+        let isAvailable;
+
+        evt.target.innerText === "SOLD OUT"
+            ? (text = "INSTOCK")
+            : (text = "SOLD OUT");
+
+        evt.target.innerText === "SOLD OUT"
+            ? (isAvailable = false)
+            : (isAvailable = true);
+
+        const response = await fetch(
+            `${config.apiBaseUrl}/menus/sale/${menuId}`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({
+                    isAvailable: isAvailable,
+                    branchId: branchId,
+                }),
+            }
+        );
     };
 
-    const deleteMenu = async (menuId: number | undefined) => {
+    const handleDelete = async (menuId: number | undefined) => {
         const response = await fetch(`${config.apiBaseUrl}/menus/${menuId}`, {
             method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+            },
         });
-        fetchData();
+        if (response.ok) fetchData();
     };
 
     return (
-        <Layout>
+        <Layout title="Menus">
             <Box
                 sx={{
                     display: "flex",
                     flexDirection: "column",
-                    maxWidth: 300,
                     m: "0 auto",
+                    px: 4,
                 }}
             >
-                <h1 style={{ textAlign: "center" }}>Create a new menu</h1>
-                <TextField
-                    label="Name"
-                    variant="outlined"
-                    sx={{ mb: 2 }}
-                    onChange={(e) =>
-                        setMenu({
-                            name: e.target.value,
-                            price: menu.price ? menu.price : 0,
-                        })
-                    }
-                />
-                <TextField
-                    label="Price"
-                    variant="outlined"
-                    sx={{ mb: 2 }}
-                    onChange={(e) =>
-                        setMenu({
-                            price: parseInt(e.target.value),
-                            name: menu.name ? menu.name : "",
-                        })
-                    }
-                />
-
-                <Button variant="contained" onClick={handlePostMenu}>
-                    Create
-                </Button>
-                <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{ mt: 2, display: "flex", flexDirection: "column" }}
-                >
-                    {locationMenusList.map((item: any) => (
-                        <Link key={item.id} to={`${item.id}`}>
-                            <Chip
-                                label={item.name}
-                                variant="outlined"
-                                onDelete={() => {
-                                    deleteMenu(item?.id);
+                <Box sx={{ display: "flex", mt: 5 }}>
+                    <Link
+                        to={"/menus/create"}
+                        style={{ textDecoration: "none", color: "black" }}
+                    >
+                        <Box
+                            sx={{
+                                width: "200px",
+                                height: "280px",
+                                border: "2px dotted lightgray",
+                                borderRadius: 2,
+                                mr: 2,
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                flexDirection: "column",
+                                cursor: "pointer",
+                                userSelect: "none",
+                            }}
+                        >
+                            <AddIcon fontSize="large" />
+                            <Typography>Add new menu</Typography>
+                        </Box>
+                    </Link>
+                    {filteredMenus.map((menu) => (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                mr: 2,
+                            }}
+                            key={menu.id}
+                        >
+                            <Link
+                                to={`/menus/${menu.id}`}
+                                style={{
+                                    textDecoration: "none",
+                                    marginBottom: "1rem",
                                 }}
-                            />
-                        </Link>
+                            >
+                                <Card sx={{ width: 200, height: 300 }}>
+                                    <CardMedia
+                                        sx={{ height: 140 }}
+                                        image={menu && menu.asset_url}
+                                        title="green iguana"
+                                    />
+                                    <CardContent>
+                                        <Typography
+                                            gutterBottom
+                                            variant="h5"
+                                            component="div"
+                                        >
+                                            {menu.name}
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            {menu.description}
+                                        </Typography>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                onClick={(evt) => handleDelete(menu.id)}
+                            >
+                                Delete
+                            </Button>
+                        </Box>
                     ))}
-                </Stack>
+                </Box>
             </Box>
         </Layout>
     );

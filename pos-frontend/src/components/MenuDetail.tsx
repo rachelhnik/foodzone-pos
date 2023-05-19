@@ -1,22 +1,30 @@
 import { useContext, useEffect, useState } from "react";
 import Layout from "./Layout";
 import { AppContext } from "../contexts/AppContext";
-import Chip from "@mui/material/Chip";
-import { Box, Button, TextField } from "@mui/material";
-import MenusData, { MenuCategory } from "../typings/Types";
-import Paper from "@mui/material/Paper";
-import { useParams } from "react-router-dom";
+
+import { Autocomplete, Box, Button, Stack, TextField } from "@mui/material";
+import MenusData from "../typings/Types";
+
+import { useNavigate, useParams } from "react-router-dom";
 import { config } from "../config/Config";
 
 export default function MenuDetail() {
-    const { menus, fetchData, menuCategories, menuMenuCategories } =
-        useContext(AppContext);
+    const { menus, branchesMenus, menuCategories } = useContext(AppContext);
 
     const { menuId } = useParams();
+    const navigate = useNavigate();
 
     let menu: MenusData | undefined;
     if (menuId) {
         menu = menus.find((menu) => menu.id === parseInt(menuId, 10));
+        if (menu) {
+            const menuLocation = branchesMenus.find(
+                (item) => item.menu_id === menu?.id
+            );
+            if (menuLocation) {
+                menu.isAvailable = menuLocation.isAvailable;
+            }
+        }
     }
     const [newMenu, setMenu] = useState({ name: "", price: 0 });
 
@@ -36,6 +44,10 @@ export default function MenuDetail() {
         });
         console.log(await response.json());
     };
+
+    const categories = menuCategories.map((menucat) => ({
+        title: menucat.name,
+    }));
 
     return (
         <Layout>
@@ -74,6 +86,22 @@ export default function MenuDetail() {
                                 })
                             }
                         />
+                        <Stack sx={{ width: 200, mb: 2 }}>
+                            <Autocomplete
+                                multiple
+                                id="tags-outlined"
+                                options={categories}
+                                getOptionLabel={(option) => option.title}
+                                defaultValue={[categories[0]]}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Multiple values"
+                                        placeholder=""
+                                    />
+                                )}
+                            />
+                        </Stack>
                         <Button variant="contained" onClick={updateMenu}>
                             Update
                         </Button>

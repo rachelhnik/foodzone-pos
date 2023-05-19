@@ -1,9 +1,11 @@
-import { pool } from "../db/db";
+import { pool } from "../../db/db";
 import express, { Request, Response, Router } from "express";
+import { checkAuth } from "../auth/auth";
 export const menuCategoryRoute = express.Router();
 
-menuCategoryRoute.post("/", async (req: Request, res: Response) => {
+menuCategoryRoute.post("/", checkAuth, async (req: Request, res: Response) => {
     const { name } = req.body;
+    console.log(req.body);
     const text = "INSERT into menu_categories (name) values($1) RETURNING *";
     const { rows } = await pool.query(text, [name]);
 
@@ -11,6 +13,7 @@ menuCategoryRoute.post("/", async (req: Request, res: Response) => {
 });
 menuCategoryRoute.delete(
     "/:menuCategoryId",
+    checkAuth,
     async (req: Request, res: Response) => {
         const { menuCategoryId } = req.params;
 

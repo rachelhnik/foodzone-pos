@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import Layout from "./Layout";
 import {
     Box,
@@ -11,15 +11,20 @@ import {
     Select,
     Chip,
     Stack,
+    FormHelperText,
 } from "@mui/material";
 import { Addon } from "../typings/Types";
 import { AppContext } from "../contexts/AppContext";
 import MenuCategories from "./MenuCategories";
 import { config } from "../config/Config";
+import { useNavigate } from "react-router-dom";
 
 export default function Addons() {
     const [addon, setAddon] = useState<Addon | null>(null);
-    const { fetchData, addons, addonCategories } = useContext(AppContext);
+    const [locationNames, setLocationName] = useState<string[] | string>([]);
+    const { fetchData, addons, addonCategories, branches } =
+        useContext(AppContext);
+    const navigate = useNavigate();
 
     const updateAddon = async () => {
         if (addon?.name.length === 0 || addon?.addonCategoriesId === null)
@@ -63,9 +68,6 @@ export default function Addons() {
                             addonCategoriesId: addon?.addonCategoriesId
                                 ? addon.addonCategoriesId
                                 : null,
-                            isAvailable: addon?.isAvailable
-                                ? addon.isAvailable
-                                : false,
                         });
                     }}
                 />
@@ -80,56 +82,39 @@ export default function Addons() {
                             addonCategoriesId: addon?.addonCategoriesId
                                 ? addon.addonCategoriesId
                                 : null,
-                            isAvailable: addon?.isAvailable
-                                ? addon.isAvailable
-                                : false,
                         });
                     }}
                 />
+
+                <TextField
+                    id="outlined-select-currency"
+                    select
+                    label="Select"
+                    helperText="Please select category"
+                    sx={{ width: 300 }}
+                >
+                    {addonCategories.map((cat) => (
+                        <MenuItem
+                            key={cat.id}
+                            value={cat.id}
+                            onClick={() => {
+                                setAddon({
+                                    name: addon?.name ? addon.name : "",
+                                    price: addon?.price ? addon?.price : 0,
+                                    addonCategoriesId: cat.id,
+                                });
+                            }}
+                        >
+                            {cat.name}
+                        </MenuItem>
+                    ))}
+                </TextField>
+
                 <Box sx={{ display: "flex", mb: 2 }}>
-                    <Checkbox
-                        disableRipple
-                        color="success"
-                        onChange={() => {
-                            setAddon({
-                                name: addon?.name ? addon.name : "",
-                                price: addon?.price ? addon?.price : 0,
-                                addonCategoriesId: addon?.addonCategoriesId
-                                    ? addon.addonCategoriesId
-                                    : null,
-                                isAvailable: !addon?.isAvailable,
-                            });
-                        }}
-                    />
+                    <Checkbox disableRipple color="success" />
                     <p>is avalilable</p>
                 </Box>
 
-                <div style={{ marginBottom: "2rem" }}>
-                    <TextField
-                        id="outlined-select-currency"
-                        select
-                        label="Select"
-                        helperText="Please select category"
-                        sx={{ width: 300 }}
-                    >
-                        {addonCategories.map((cat) => (
-                            <MenuItem
-                                key={cat.id}
-                                value={cat.id}
-                                onClick={() => {
-                                    setAddon({
-                                        name: addon?.name ? addon.name : "",
-                                        price: addon?.price ? addon?.price : 0,
-                                        addonCategoriesId: cat.id,
-                                        isAvailable: !addon?.isAvailable,
-                                    });
-                                }}
-                            >
-                                {cat.name}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                </div>
                 <Button variant="contained" onClick={updateAddon}>
                     Create
                 </Button>

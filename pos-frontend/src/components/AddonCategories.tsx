@@ -1,5 +1,5 @@
 import { Box, TextField, Checkbox, Button, Chip, Stack } from "@mui/material";
-import React, { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Layout from "./Layout";
 import { AddonCategory } from "../typings/Types";
 import { config } from "../config/Config";
@@ -9,15 +9,19 @@ export default function AddonCategories() {
     const [addonCategory, setAddonCategory] = useState<AddonCategory | null>(
         null
     );
-    console.log(addonCategory);
+    const accessToken = localStorage.getItem("accessToken");
+
     const { fetchData, addonCategories } = useContext(AppContext);
+
     const updateAddonCategory = async () => {
         if (!addonCategory?.name) return;
 
         const response = await fetch(`${config.apiBaseUrl}/addon-categories`, {
             method: "POST",
-            mode: "cors",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+            },
             body: JSON.stringify(addonCategory),
         });
         fetchData();
@@ -29,6 +33,9 @@ export default function AddonCategories() {
             `${config.apiBaseUrl}/addon-categories/${addonCategoryId}`,
             {
                 method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
             }
         );
 

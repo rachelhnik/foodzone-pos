@@ -1,8 +1,9 @@
-import { pool } from "../db/db";
+import { pool } from "../../db/db";
 import express, { Request, Response, Router } from "express";
+import { checkAuth } from "../auth/auth";
 export const addonCategoryRoute = express.Router();
 
-addonCategoryRoute.post("/", async (req: Request, res: Response) => {
+addonCategoryRoute.post("/", checkAuth, async (req: Request, res: Response) => {
     const { name, isRequired } = req.body;
     const text =
         "INSERT into addon_categories (name,is_required) values($1,$2) RETURNING *";
@@ -12,6 +13,7 @@ addonCategoryRoute.post("/", async (req: Request, res: Response) => {
 });
 addonCategoryRoute.delete(
     "/:addonCategoryId",
+    checkAuth,
     async (req: Request, res: Response) => {
         const { addonCategoryId } = req.params;
         if (!addonCategoryId) return;
