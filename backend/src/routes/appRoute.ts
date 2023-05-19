@@ -34,6 +34,7 @@ appRoute.get("/data", checkAuth, async (req: Request, res: Response) => {
     );
 
     const branchesIds = branches.rows.map((row) => row.id);
+
     const branchesMenus = await pool.query(
         "select * from branches_menus where branch_id = ANY($1::int[])",
         [branchesIds]

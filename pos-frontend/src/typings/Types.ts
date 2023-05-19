@@ -35,10 +35,10 @@ export interface BranchesData {
 }
 
 export interface branchesMenus {
-    menu_id: number | undefined;
-    branch_id: number;
+    menu_id?: number | undefined;
+    branch_id?: number;
     id?: number;
-    isAvailable: boolean;
+    is_available: boolean;
 }
 
 export interface Company {

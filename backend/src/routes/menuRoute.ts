@@ -45,11 +45,28 @@ menuRoute.put(
     checkAuth,
     async (req: Request, res: Response) => {
         const { menuId } = req.params;
-        const { isAvailable, branchId } = req.body;
+        const { currentBranchesData, branchId, branchIds } = req.body;
+
+        const currentBranch = currentBranchesData.find(
+            (branchMenu: any) =>
+                String(branchMenu.menu_id) === menuId &&
+                String(branchMenu.branch_id) === branchId
+        );
+
+        const { is_available } = currentBranch;
+
         const text =
             "UPDATE branches_menus SET is_available=$1  WHERE menu_id =($2) AND branch_id=($3) RETURNING *";
-        const result = await pool.query(text, [isAvailable, menuId, branchId]);
+        const updatedMenuBranch = await pool.query(text, [
+            is_available,
+            menuId,
+            branchId,
+        ]);
+        const updatedBranchesMenus = await pool.query(
+            "select * from branches_menus where branch_id = ANY($1::int[])",
+            [branchIds]
+        );
 
-        res.send(result.rows);
+        res.send(updatedBranchesMenus.rows);
     }
 );

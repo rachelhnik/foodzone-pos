@@ -8,62 +8,33 @@ import {
 } from "@mui/material";
 import Layout from "./Layout";
 import { useContext, useEffect, useState } from "react";
-import MenusData from "../typings/Types";
+import MenusData, { branchesMenus } from "../typings/Types";
 import { AppContext, AppContextType } from "../contexts/AppContext";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import { config } from "../config/Config";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import { red } from "@mui/material/colors";
 
 const Menus = () => {
-    const [clickText, setClickText] = useState({
-        text: "SOLD OUT",
-    });
-    const [active, setActive] = useState(false);
-
     const navigate = useNavigate();
     const branchId = localStorage.getItem("selectedLocation");
     const accessToken = localStorage.getItem("accessToken");
 
     const { fetchData, menus, branches, branchesMenus } =
         useContext(AppContext);
+    const branchIds = branches.map((branch) => branch.id);
+
+    const [branchMenus, setBranchMenus] =
+        useState<branchesMenus[]>(branchesMenus);
 
     const validBranchesMenus = branchesMenus
         .filter((branchMenu) => String(branchMenu.branch_id) === branchId)
         .map((branchMenu) => branchMenu.menu_id);
-    console.log(validBranchesMenus);
 
     const filteredMenus = menus.filter((menu) =>
         validBranchesMenus.includes(menu.id as number)
     );
-    console.log(filteredMenus);
-    let text: any;
-
-    const handleSale = async (evt: any, menuId: number | undefined) => {
-        let isAvailable;
-
-        evt.target.innerText === "SOLD OUT"
-            ? (text = "INSTOCK")
-            : (text = "SOLD OUT");
-
-        evt.target.innerText === "SOLD OUT"
-            ? (isAvailable = false)
-            : (isAvailable = true);
-
-        const response = await fetch(
-            `${config.apiBaseUrl}/menus/sale/${menuId}`,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${accessToken}`,
-                },
-                body: JSON.stringify({
-                    isAvailable: isAvailable,
-                    branchId: branchId,
-                }),
-            }
-        );
-    };
 
     const handleDelete = async (menuId: number | undefined) => {
         const response = await fetch(`${config.apiBaseUrl}/menus/${menuId}`, {
@@ -74,6 +45,67 @@ const Menus = () => {
             },
         });
         if (response.ok) fetchData();
+    };
+
+    const handleSoldOut = async (menuId: number | undefined) => {
+        const currentBranchesData = branchMenus.map((updateBranchMenu) => {
+            if (
+                updateBranchMenu.menu_id === menuId &&
+                String(updateBranchMenu.branch_id) === branchId
+            ) {
+                return { ...updateBranchMenu, is_available: false };
+            }
+            return updateBranchMenu;
+        });
+
+        const response = await fetch(
+            `${config.apiBaseUrl}/menus/sale/${menuId}`,
+            {
+                method: "put",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({
+                    currentBranchesData,
+                    branchId: branchId,
+                    branchIds: branchIds,
+                }),
+            }
+        );
+        const updatedData = await response.json();
+        fetchData();
+        setBranchMenus(updatedData);
+    };
+    const handleInstock = async (menuId: number | undefined) => {
+        const currentBranchesData = branchMenus.map((updateBranchMenu) => {
+            if (
+                updateBranchMenu.menu_id === menuId &&
+                String(updateBranchMenu.branch_id) === branchId
+            ) {
+                return { ...updateBranchMenu, is_available: true };
+            }
+            return updateBranchMenu;
+        });
+
+        const response = await fetch(
+            `${config.apiBaseUrl}/menus/sale/${menuId}`,
+            {
+                method: "put",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({
+                    currentBranchesData,
+                    branchId: branchId,
+                    branchIds: branchIds,
+                }),
+            }
+        );
+        const updatedData = await response.json();
+        fetchData();
+        setBranchMenus(updatedData);
     };
 
     return (
@@ -113,6 +145,7 @@ const Menus = () => {
                     {filteredMenus.map((menu) => (
                         <Box
                             sx={{
+                                position: "relative",
                                 display: "flex",
                                 flexDirection: "column",
                                 mr: 2,
@@ -126,7 +159,7 @@ const Menus = () => {
                                     marginBottom: "1rem",
                                 }}
                             >
-                                <Card sx={{ width: 200, height: 300 }}>
+                                <Card sx={{ width: 200, height: 280 }}>
                                     <CardMedia
                                         sx={{ height: 140 }}
                                         image={menu && menu.asset_url}
@@ -141,21 +174,67 @@ const Menus = () => {
                                             {menu.name}
                                         </Typography>
                                         <Typography
-                                            variant="body2"
+                                            variant="body1"
                                             color="text.secondary"
                                         >
                                             {menu.description}
                                         </Typography>
+
+                                        {branchMenus.find(
+                                            (branchMenu) =>
+                                                String(branchMenu.branch_id) ===
+                                                    branchId &&
+                                                branchMenu.menu_id === menu.id
+                                        )?.is_available === false ? (
+                                            <Typography
+                                                variant="h5"
+                                                sx={{ color: "red", mt: 2 }}
+                                            >
+                                                SOLD OUT
+                                            </Typography>
+                                        ) : (
+                                            <Typography
+                                                variant="h5"
+                                                sx={{ color: "green", mt: 2 }}
+                                            >
+                                                INSTOCK
+                                            </Typography>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </Link>
-                            <Button
-                                variant="contained"
-                                color="error"
+                            <DeleteForeverIcon
+                                sx={{
+                                    color: "red",
+                                    position: "absolute",
+                                    right: 0,
+                                    bottom: 50,
+                                }}
                                 onClick={(evt) => handleDelete(menu.id)}
+                            />
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "space-evenly",
+                                }}
                             >
-                                Delete
-                            </Button>
+                                <Button
+                                    color="error"
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => handleSoldOut(menu.id)}
+                                >
+                                    Sold out
+                                </Button>
+                                <Button
+                                    color="success"
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => handleInstock(menu.id)}
+                                >
+                                    Instock
+                                </Button>
+                            </Box>
                         </Box>
                     ))}
                 </Box>
